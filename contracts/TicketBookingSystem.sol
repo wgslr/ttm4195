@@ -2,6 +2,7 @@
 pragma solidity  ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 
 contract TicketBookingSystem{
     
@@ -57,8 +58,17 @@ contract TicketBookingSystem{
         return ticketOwner;
     }
     
-    function refund(uint256 tokenId) public onlySalesManager {
-        
+    
+    function refund() public {
+         for (uint id = 0; id < seats.length; ++id){ 
+            try tickets.ownerOf(id) returns (address owner) {
+                payable(owner).transfer(seats[id].price);
+                tickets.burn(id);
+            } catch {
+                // if the ticket does not exist, there is nothing to return
+                continue;
+            }
+        }   
     }
     
     function validate(uint256 tokenId) public correctTimeFrame {
@@ -70,7 +80,7 @@ contract TicketBookingSystem{
     }
 }
 
-contract Ticket is ERC721{
+contract Ticket is ERC721, ERC721Burnable{
     
     address public minter_address;
     uint256 private tokenId;
@@ -92,7 +102,7 @@ contract Ticket is ERC721{
     }
 }
 
-contract Poster is ERC721{
+contract Poster is ERC721, ERC721Burnable{
     
     address public minter_address;
     uint256 private tokenId;
