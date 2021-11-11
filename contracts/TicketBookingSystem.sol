@@ -2,7 +2,7 @@
 pragma solidity  ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
+// import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 
 contract TicketBookingSystem{
     
@@ -80,14 +80,13 @@ contract TicketBookingSystem{
     }
 }
 
-contract Ticket is ERC721, ERC721Burnable{
+contract Ticket is ERC721 {
     
     address public minter_address;
-    uint256 private tokenId;
+    
     
     constructor() ERC721("Ticket", "TKT"){
         minter_address = msg.sender;
-        tokenId = 0;
     }
     
     modifier onlySalesManager() {
@@ -100,9 +99,15 @@ contract Ticket is ERC721, ERC721Burnable{
         _safeMint(recipient, newItemId);
         return newItemId;
     }
+    
+    function burn(uint256 tokenId) public  {
+        //solhint-disable-next-line max-line-length
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721Burnable: caller is not owner nor approved");
+        _burn(tokenId);
+    }
 }
 
-contract Poster is ERC721, ERC721Burnable{
+contract Poster is ERC721 {
     
     address public minter_address;
     uint256 private tokenId;
