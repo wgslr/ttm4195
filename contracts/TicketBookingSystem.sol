@@ -10,15 +10,15 @@ contract TicketBookingSystem{
         uint16 seatNumber;
         uint64 showTimestamp;
         string seatViewURL;
+        uint price;
     }
     
     //Public attributes
     string public show_title;
+    Seat[] seats;
     
     //Private attributes
 
-    Ticket ticketContract = new Ticket();
-    Poster posterContract = new Poster();
     
     //modifiers
     modifier onlySalesManager() {
@@ -30,8 +30,8 @@ contract TicketBookingSystem{
         _;
     }
     
-    constructor() {
-        show_title = "Lion King";
+    constructor(string memory title)  {
+        show_title = title;
     }
     
     //functions
@@ -42,7 +42,7 @@ contract TicketBookingSystem{
     //main functions
     function buy() public payable {     //buys tickets
         //if seat is available, blabla...  (string memory seat, string memory date, string memory show)
-        ticketContract.mintTKT(msg.sender);
+        // ticketContract.mintTKT(msg.sender);
     }
     
     function verify(uint256 tokenId, address owner) public {    //verifies tickets owners
