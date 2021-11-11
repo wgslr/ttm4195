@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 contract TicketBookingSystem{
     
     //Public attributes
-    address public minter_address;
     string public show_title;
     
     //Private attributes
@@ -16,7 +15,7 @@ contract TicketBookingSystem{
     
     //modifiers
     modifier onlySalesManager() {
-        require(msg.sender == minter_address, "The calling address is not authorized.")
+        require(msg.sender == minter_address, "The calling address is not authorized.");
         _;
     }
     
@@ -29,17 +28,17 @@ contract TicketBookingSystem{
     }
     
     //functions
-    function releasePoster() {
+    function releasePoster() private {
         
     }
     
     //main functions
-    function buy(string seat, string date, string show) public payable returns (uint256) {
-        //if seat is available, blabla...
+    function buy() public payable {     //buys tickets
+        //if seat is available, blabla...  (string memory seat, string memory date, string memory show)
         ticketContract.mintTKT(msg.sender);
     }
     
-    function verify(uint256 tokenId, address owner) public returns (bool) {
+    function verify(uint256 tokenId, address owner) public {    //verifies tickets owners
         
     }
     
@@ -47,7 +46,7 @@ contract TicketBookingSystem{
         
     }
     
-    function validate(uint256 tokenId) public correctTimeFrame returns (bool) {
+    function validate(uint256 tokenId) public correctTimeFrame {
         
     }
     
@@ -67,17 +66,20 @@ contract Ticket is ERC721{
     }
     
     modifier onlySalesManager() {
-        require(msg.sender == minter_address, "The calling address is not authorized.")
+        require(msg.sender == minter_address, "The calling address is not authorized.");
         _;
     }
     
-    function mintTKT(address recipient) private onlySalesManager returns (uint256) {
+    function mintTKT(address recipient) public onlySalesManager returns (uint256) {
         uint256 newItemId = tokenId;
         _safeMint(recipient, newItemId);
         tokenId += 1;
         return newItemId;
     }
     
+    function verifyOwner(address owner, uint256 tokenId) public returns (bool) {
+        //if ()
+    }
 }
 
 contract Poster is ERC721{
@@ -91,7 +93,7 @@ contract Poster is ERC721{
     }
     
     modifier onlySalesManager() {
-        require(msg.sender == minter_address, "The calling address is not authorized.")
+        require(msg.sender == minter_address, "The calling address is not authorized.");
         _;
     }
     
@@ -101,5 +103,4 @@ contract Poster is ERC721{
         tokenId += 1;
         return newItemId;
     }
-    
 }
