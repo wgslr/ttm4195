@@ -18,12 +18,13 @@ contract TicketBookingSystem{
     Seat[] public seats;
     
     //Private attributes
+    address private creator;
     Ticket tickets = new Ticket();
-
+    Poster posters = new Poster();
     
     //modifiers
     modifier onlySalesManager() {
-        // require(msg.sender == minter_address, "The calling address is not authorized.");
+        require(msg.sender == creator, "The calling address is not authorized.");
         _;
     }
     
@@ -44,9 +45,10 @@ contract TicketBookingSystem{
     }
     
     //main functions
-    function buy() public payable {     //buys tickets
-        //if seat is available, blabla...  (string memory seat, string memory date, string memory show)
-        // ticketContract.mintTKT(msg.sender);
+    function buy(uint256 tokenId) public payable returns (uint256) {     //buys tickets
+        require(seats[tokenId].showTimestamp > block.timestamp, "The specified ticket is no longer valid.");
+        uint256 newTicket = ticketContract.mintTKT(msg.sender, tokenId);
+        return newTicket;
     }
     
     function verify(uint256 tokenId) public view returns (address) {    //verifies tickets owners\
@@ -55,7 +57,7 @@ contract TicketBookingSystem{
         return ticketOwner;
     }
     
-    function refund(uint256 tokenId) public {
+    function refund(uint256 tokenId) public onlySalesManager {
         
     }
     
@@ -83,10 +85,9 @@ contract Ticket is ERC721{
         _;
     }
     
-    function mintTKT(address recipient) public onlySalesManager returns (uint256) {
-        uint256 newItemId = tokenId;
+    function mintTKT(address recipient, uint256 seatId) public onlySalesManager returns (uint256) {
+        uint256 newItemId = seatId;
         _safeMint(recipient, newItemId);
-        tokenId += 1;
         return newItemId;
     }
     
