@@ -16,6 +16,7 @@ contract TicketBookingSystem{
     
     //Public attributes
     string public show_title;
+    uint64 public validationTimeframe;
     Seat[] public seats;
     
     //Private attributes
@@ -29,12 +30,15 @@ contract TicketBookingSystem{
         _;
     }
     
-    modifier correctTimeFrame() {
+    modifier correctTimeFrame(uint256 tokenId) {
+        require(block.timestamp * 1000 <= seats[tokenId].timestamp &&
+            block.timestamp * 1000 >= seats[tokenId].timestamp - validationTimeframe, "The ticket has expired");
         _;
     }
     
-    constructor(string memory title, Seat[] memory _seats)  {
+    constructor(string memory title, uint64 _validationTimeframe, Seat[] memory _seats)  {
         show_title = title;
+        validationTimeframe = _validationTimeframe;
         for (uint i = 0; i < _seats.length; ++i){ 
             seats.push(_seats[i]);
         }
@@ -71,7 +75,7 @@ contract TicketBookingSystem{
         }   
     }
     
-    function validate(uint256 tokenId) public correctTimeFrame {
+    function validate(uint256 tokenId) public correctTimeFrame(tokenId) {
         
     }
     
