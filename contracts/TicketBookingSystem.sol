@@ -8,7 +8,7 @@ contract TicketBookingSystem{
     struct  Seat {
         uint16 rowNumber;
         uint16 seatNumber;
-        uint64 showTimestamp;
+        uint64 timestamp;
         string seatViewURL;
         uint price;
     }
@@ -18,6 +18,7 @@ contract TicketBookingSystem{
     Seat[] seats;
     
     //Private attributes
+    Ticket tickets = new Ticket();
 
     
     //modifiers
@@ -45,8 +46,10 @@ contract TicketBookingSystem{
         // ticketContract.mintTKT(msg.sender);
     }
     
-    function verify(uint256 tokenId, address owner) public {    //verifies tickets owners
-        
+    function verify(uint256 tokenId) public view returns (address) {    //verifies tickets owners\
+        address ticketOwner = tickets.ownerOf(tokenId);
+        require(block.timestamp * 1000 <= seats[tokenId].timestamp, "The ticket has expired");
+        return ticketOwner;
     }
     
     function refund(uint256 tokenId) public {
@@ -87,6 +90,7 @@ contract Ticket is ERC721{
     function verifyOwner(address owner, uint256 tokenId) public returns (bool) {
         //if ()
     }
+    
 }
 
 contract Poster is ERC721{
