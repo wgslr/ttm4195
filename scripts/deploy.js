@@ -4,7 +4,15 @@
         console.log('Running deployWithWeb3 script...')
         
         const contractName = 'TicketBookingSystem' // Change this for other contract
-        const constructorArgs = ["Alien contra Predator"]    // Put constructor args (if any) here for your contract
+        const constructorArgs = ["Alien contra Predator", [
+            {
+                rowNumber: 3,
+                seatNumber: 4,
+                showTimestamp: 500,
+                seatViewURL: "wikipedia.org",
+                price: 30
+            }
+            ]]    // Put constructor args (if any) here for your contract
     
         // Note that the script needs the ABI which is generated from the compilation artifact.
         // Make sure contract is compiled and artifacts are generated

@@ -15,7 +15,7 @@ contract TicketBookingSystem{
     
     //Public attributes
     string public show_title;
-    Seat[] seats;
+    Seat[] public seats;
     
     //Private attributes
     Ticket tickets = new Ticket();
@@ -31,8 +31,11 @@ contract TicketBookingSystem{
         _;
     }
     
-    constructor(string memory title)  {
+    constructor(string memory title, Seat[] memory _seats)  {
         show_title = title;
+        for (uint i = 0; i < _seats.length; ++i){ 
+            seats.push(_seats[i]);
+        }
     }
     
     //functions
