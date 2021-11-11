@@ -45,9 +45,9 @@ contract TicketBookingSystem{
     }
     
     //main functions
-    function buy(uint256 tokenId) public payable returns (uint256) {     //buys tickets
-        require(seats[tokenId].showTimestamp > block.timestamp, "The specified ticket is no longer valid.");
-        uint256 newTicket = ticketContract.mintTKT(msg.sender, tokenId);
+    function buy(uint256 seatId) public payable returns (uint256) {     //buys tickets
+        require(seats[seatId].timestamp > block.timestamp, "The specified ticket is no longer valid.");
+        uint256 newTicket = tickets.mintTKT(msg.sender, seatId);
         return newTicket;
     }
     
@@ -90,11 +90,6 @@ contract Ticket is ERC721{
         _safeMint(recipient, newItemId);
         return newItemId;
     }
-    
-    function verifyOwner(address owner, uint256 tokenId) public returns (bool) {
-        //if ()
-    }
-    
 }
 
 contract Poster is ERC721{
