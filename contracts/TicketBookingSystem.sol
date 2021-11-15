@@ -3,6 +3,7 @@ pragma solidity  ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
+import "hardhat/console.sol";
 
 contract TicketBookingSystem{
     
@@ -34,6 +35,7 @@ contract TicketBookingSystem{
     }
     
     constructor(string memory title, Seat[] memory _seats)  {
+        console.log('Initializing BookingSystem "%s" with %d seats', title, _seats.length);
         show_title = title;
         for (uint i = 0; i < _seats.length; ++i){ 
             seats.push(_seats[i]);

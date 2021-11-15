@@ -1,7 +1,17 @@
 async function main() {
   // We get the contract to deploy
   const Greeter = await ethers.getContractFactory("TicketBookingSystem");
-  const greeter = await Greeter.deploy("Batman", []);
+
+  const seats = [
+    {
+      rowNumber: 3,
+      seatNumber: 4,
+      showTimestamp: 500,
+      seatViewURL: "wikipedia.org",
+      price: 30,
+    },
+  ];
+  const greeter = await Greeter.deploy("Batman", [seats]);
 
   console.log("TicketBookingSystem deployed to:", greeter.address);
 }
