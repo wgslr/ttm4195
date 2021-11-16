@@ -19,10 +19,29 @@ describe("TicketBookingSystem", function () {
     },
   ];
 
-  it("Constructor should accept title and seats", async function () {
-    const TicketBookingSystemFactory = await ethers.getContractFactory(
+  let TicketBookingSystemFactory;
+  let TicketFactory;
+  let seller, buyer1, buyer2;
+  let ticketBookingSystem;
+
+  before(async function () {
+    TicketBookingSystemFactory = await ethers.getContractFactory(
       "TicketBookingSystem"
     );
+    TicketFactory = await ethers.getContractFactory("Ticket");
+    [seller, buyer1, buyer2] = await ethers.getSigners();
+  });
+
+  beforeEach(async function () {
+    ticketBookingSystem = await TicketBookingSystemFactory.deploy(
+      "Lion King",
+      2 * 3600 * 1000,
+      seats
+    );
+    await ticketBookingSystem.deployed();
+  });
+
+  it("Constructor should register show title", async function () {
     const ticketBookingSystem = await TicketBookingSystemFactory.deploy(
       "Lion King",
       2 * 3600 * 1000,
@@ -33,32 +52,12 @@ describe("TicketBookingSystem", function () {
   });
 
   it("Prevents sales with insufficient payment", async function () {
-    const TicketBookingSystemFactory = await ethers.getContractFactory(
-      "TicketBookingSystem"
-    );
-    const ticketBookingSystem = await TicketBookingSystemFactory.deploy(
-      "Lion King",
-      2 * 3600 * 1000,
-      seats
-    );
-    await ticketBookingSystem.deployed();
     await expect(
       ticketBookingSystem.buy(0, { value: seats[0].price - 1 })
     ).to.be.revertedWith("The price of the ticket is not correct.");
   });
 
   it("Prevents double booking", async function () {
-    const [seller, buyer1, buyer2] = await ethers.getSigners();
-    const TicketBookingSystemFactory = await ethers.getContractFactory(
-      "TicketBookingSystem",
-      seller
-    );
-    const ticketBookingSystem = await TicketBookingSystemFactory.deploy(
-      "Lion King",
-      2 * 3600 * 1000,
-      seats
-    );
-
     await ticketBookingSystem.connect(buyer1).buy(0, { value: seats[0].price });
     await expect(
       ticketBookingSystem.connect(buyer1).buy(0, { value: seats[0].price }),
@@ -71,18 +70,6 @@ describe("TicketBookingSystem", function () {
   });
 
   it("Transfers Ticket to the buyer", async function () {
-    const [seller, buyer1, buyer2] = await ethers.getSigners();
-    const TicketBookingSystemFactory = await ethers.getContractFactory(
-      "TicketBookingSystem",
-      seller
-    );
-    const TicketFactory = await ethers.getContractFactory("Ticket");
-    const ticketBookingSystem = await TicketBookingSystemFactory.deploy(
-      "Lion King",
-      2 * 3600 * 1000,
-      seats
-    );
-
     const price = seats[0].price;
     await expect(
       await ticketBookingSystem.connect(buyer1).buy(0, { value: price })
@@ -97,24 +84,11 @@ describe("TicketBookingSystem", function () {
   });
 
   it("People cannot buy mint tickets without using BookingSystem", async function () {
-    const [seller, buyer1, buyer2] = await ethers.getSigners();
-    const TicketBookingSystemFactory = await ethers.getContractFactory(
-      "TicketBookingSystem",
-      seller
-    );
-    const TicketFactory = await ethers.getContractFactory("Ticket");
-    const ticketBookingSystem = await TicketBookingSystemFactory.deploy(
-      "Lion King",
-      2 * 3600 * 1000,
-      seats
-    );
     const ticketsContractAddr = await ticketBookingSystem.tickets();
     const tickets = TicketFactory.attach(ticketsContractAddr).connect(buyer1);
 
     await expect(tickets.mintTKT(buyer1.address, 0)).to.be.revertedWith(
       "The calling address is not authorized."
     );
-
-    const tickets2 = TicketFactory.attach(ticketsContractAddr).connect(seller);
   });
 });
