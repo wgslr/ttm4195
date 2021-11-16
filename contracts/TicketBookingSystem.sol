@@ -48,10 +48,10 @@ contract TicketBookingSystem{
     }
     
     //main functions
-    function buy(uint256 seatId) public payable returns (uint256) {     //buys tickets
+    function buy(uint256 seatId) public payable returns (uint256 newTokenId) {     //buys tickets
+        require(msg.value == seats[seatId].price, "The price of the ticket is not correct.");
         require(seats[seatId].timestamp > block.timestamp, "The specified ticket is no longer valid.");
-        uint256 newTicket = tickets.mintTKT(msg.sender, seatId);
-        return newTicket;
+        newTokenId = tickets.mintTKT(msg.sender, seatId);
     }
     
     function verify(uint256 tokenId) public view returns (address) {    //verifies tickets owners\
