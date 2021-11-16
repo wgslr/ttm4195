@@ -152,12 +152,21 @@ contract Ticket is ERC721, ERC721Burnable {
         return true;
     }
 
-    function setSellable(uint256 tokenId, uint256 price)
-        public
-        onlyOwner(tokenId)
-    {
-        _isSellable[tokenId] = true;
-        _salePrice[tokenId] = price;
+    /**
+    @notice Set whether the ticket can be re-sold. Available only to the owner.
+    @param tokenId Ticket id to modify
+    @param isSellable Whether others can buy this ticket
+    @param price Price of the ticket on secondary market. Ignored if `isSellable` is false
+     */
+    function setSellable(
+        uint256 tokenId,
+        bool isSellable,
+        uint256 price
+    ) public onlyOwner(tokenId) {
+        _isSellable[tokenId] = isSellable;
+        if (isSellable) {
+            _salePrice[tokenId] = price;
+        }
     }
 
     function getResalePrice(uint256 tokenId)

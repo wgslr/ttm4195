@@ -134,7 +134,7 @@ describe("TicketBookingSystem", function () {
       const ticketsBuyer1 =
         TicketFactory.attach(ticketsContractAddr).connect(buyer1);
 
-      await ticketsBuyer1.setSellable(1, 1000);
+      await ticketsBuyer1.setSellable(1, true, 1000);
 
       const resalePrice = await ticketsBuyer1.getResalePrice(1);
       // each array element asserted separaetly to trigger correct BigNumber handling
@@ -143,5 +143,22 @@ describe("TicketBookingSystem", function () {
 
       expect((await ticketsBuyer1.getResalePrice(0))[0]).to.equal(false);
     });
+
+    it("non-owner can not set sellability", async function () {
+      ticketBookingSystem.connect(buyer1).buy(0, { value: seats[0].price });
+
+      const ticketsContractAddr = await ticketBookingSystem.tickets();
+      const ticketsBuyer2 =
+        TicketFactory.attach(ticketsContractAddr).connect(buyer2);
+
+      await expect(ticketsBuyer2.setSellable(0, true, 1000)).to.be.revertedWith(
+        "The calling address is not the owner."
+      );
+      await expect(ticketsBuyer2.setSellable(0, false, 0)).to.be.revertedWith(
+        "The calling address is not the owner."
+      );
+    });
+
+    it("owner can cancel sale offer", async function () {});
   });
 });
