@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
+
 //import "hardhat/console.sol";
 
 contract TicketBookingSystem {
@@ -11,7 +12,7 @@ contract TicketBookingSystem {
         uint16 seatNumber;
         uint64 timestamp;
         string seatViewURL;
-        uint price;
+        uint256 price;
     }
 
     //Public attributes
@@ -113,6 +114,9 @@ contract TicketBookingSystem {
 contract Ticket is ERC721, ERC721Burnable {
     address public minter_address;
 
+    mapping(uint256 => uint256) private _salePrice;
+    mapping(uint256 => bool) private _isSellable;
+
     constructor() ERC721("Ticket", "TKT") {
         minter_address = msg.sender;
     }
@@ -121,6 +125,14 @@ contract Ticket is ERC721, ERC721Burnable {
         require(
             msg.sender == minter_address,
             "The calling address is not authorized."
+        );
+        _;
+    }
+
+    modifier onlyOwner(uint256 tokenId) {
+        require(
+            msg.sender == ownerOf(tokenId),
+            "The calling address is not the owner."
         );
         _;
     }
@@ -134,14 +146,29 @@ contract Ticket is ERC721, ERC721Burnable {
         _safeMint(recipient, newItemId);
         return newItemId;
     }
-    
-    function burnTKT(uint256 seatId)
-        public
-        onlySalesManager
-        returns (bool)
-    {
+
+    function burnTKT(uint256 seatId) public onlySalesManager returns (bool) {
         _burn(seatId);
         return true;
+    }
+
+    function setSellable(uint256 tokenId, uint256 price)
+        public
+        onlyOwner(tokenId)
+    {
+        _isSellable[tokenId] = true;
+        _salePrice[tokenId] = price;
+    }
+
+    function getResalePrice(uint256 tokenId)
+        public
+        view
+        returns (bool isSellable, uint256 price)
+    {
+        isSellable = _isSellable[tokenId];
+        if (isSellable) {
+            price = _salePrice[tokenId];
+        }
     }
 }
 

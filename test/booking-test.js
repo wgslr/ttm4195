@@ -124,4 +124,24 @@ describe("TicketBookingSystem", function () {
       );
     });
   });
+
+  describe("Trading", function () {
+    it("owner can set sale price", async function () {
+      ticketBookingSystem.connect(buyer1).buy(0, { value: seats[0].price });
+      ticketBookingSystem.connect(buyer1).buy(1, { value: seats[1].price });
+
+      const ticketsContractAddr = await ticketBookingSystem.tickets();
+      const ticketsBuyer1 =
+        TicketFactory.attach(ticketsContractAddr).connect(buyer1);
+
+      await ticketsBuyer1.setSellable(1, 1000);
+
+      const resalePrice = await ticketsBuyer1.getResalePrice(1);
+      // each array element asserted separaetly to trigger correct BigNumber handling
+      expect(resalePrice[0]).to.equal(true);
+      expect(resalePrice[1]).to.equal(1000);
+
+      expect((await ticketsBuyer1.getResalePrice(0))[0]).to.equal(false);
+    });
+  });
 });
