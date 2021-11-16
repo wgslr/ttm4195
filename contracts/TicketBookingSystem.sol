@@ -166,6 +166,8 @@ contract Ticket is ERC721, ERC721Burnable {
         _isSellable[tokenId] = isSellable;
         if (isSellable) {
             _salePrice[tokenId] = price;
+        } else {
+            _salePrice[tokenId] = 0;
         }
     }
 

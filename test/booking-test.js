@@ -159,6 +159,20 @@ describe("TicketBookingSystem", function () {
       );
     });
 
-    it("owner can cancel sale offer", async function () {});
+    it("owner can cancel sale offer", async function () {
+      ticketBookingSystem.connect(buyer1).buy(0, { value: seats[0].price });
+      ticketBookingSystem.connect(buyer1).buy(1, { value: seats[1].price });
+
+      const ticketsContractAddr = await ticketBookingSystem.tickets();
+      const ticketsBuyer1 =
+        TicketFactory.attach(ticketsContractAddr).connect(buyer1);
+
+      await ticketsBuyer1.setSellable(1, true, 1000);
+      await ticketsBuyer1.setSellable(1, false, 1000);
+
+      const resalePrice = await ticketsBuyer1.getResalePrice(1);
+      expect(resalePrice[0]).to.equal(false);
+      expect(resalePrice[1]).to.equal(0);
+    });
   });
 });
