@@ -124,4 +124,99 @@ describe("TicketBookingSystem", function () {
       );
     });
   });
+
+  describe("Trading", function () {
+    it("owner can set sale price", async function () {
+      ticketBookingSystem.connect(buyer1).buy(0, { value: seats[0].price });
+      ticketBookingSystem.connect(buyer1).buy(1, { value: seats[1].price });
+
+      const ticketsContractAddr = await ticketBookingSystem.tickets();
+      const ticketsBuyer1 =
+        TicketFactory.attach(ticketsContractAddr).connect(buyer1);
+
+      await ticketsBuyer1.setSellable(1, true, 1000);
+
+      const resalePrice = await ticketsBuyer1.getResalePrice(1);
+      // each array element asserted separaetly to trigger correct BigNumber handling
+      expect(resalePrice[0]).to.equal(true);
+      expect(resalePrice[1]).to.equal(1000);
+
+      expect((await ticketsBuyer1.getResalePrice(0))[0]).to.equal(false);
+    });
+
+    it("non-owner can not set sellability", async function () {
+      ticketBookingSystem.connect(buyer1).buy(0, { value: seats[0].price });
+
+      const ticketsContractAddr = await ticketBookingSystem.tickets();
+      const ticketsBuyer2 =
+        TicketFactory.attach(ticketsContractAddr).connect(buyer2);
+
+      await expect(ticketsBuyer2.setSellable(0, true, 1000)).to.be.revertedWith(
+        "The calling address is not the owner."
+      );
+      await expect(ticketsBuyer2.setSellable(0, false, 0)).to.be.revertedWith(
+        "The calling address is not the owner."
+      );
+    });
+
+    it("owner can cancel sale offer", async function () {
+      ticketBookingSystem.connect(buyer1).buy(0, { value: seats[0].price });
+      ticketBookingSystem.connect(buyer1).buy(1, { value: seats[1].price });
+
+      const ticketsContractAddr = await ticketBookingSystem.tickets();
+      const ticketsBuyer1 =
+        TicketFactory.attach(ticketsContractAddr).connect(buyer1);
+
+      await ticketsBuyer1.setSellable(1, true, 1000);
+      await ticketsBuyer1.setSellable(1, false, 1000);
+
+      const resalePrice = await ticketsBuyer1.getResalePrice(1);
+      expect(resalePrice[0]).to.equal(false);
+      expect(resalePrice[1]).to.equal(0);
+    });
+
+    it("sellable ticket can be traded", async function () {
+      ticketBookingSystem.connect(buyer1).buy(0, { value: seats[0].price });
+      ticketBookingSystem.connect(buyer1).buy(1, { value: seats[1].price });
+      const ticketBookingSystemBuyer2 = ticketBookingSystem.connect(buyer2);
+
+      const ticketsContractAddr = await ticketBookingSystem.tickets();
+      const ticketsBuyer1 =
+        TicketFactory.attach(ticketsContractAddr).connect(buyer1);
+
+      await ticketsBuyer1.setSellable(1, true, 1000);
+
+      await expect(
+        ticketBookingSystemBuyer2.tradeTicket(buyer2.address, 0, { value: 1 })
+      ).to.be.revertedWith("The ticket is not sellable.");
+      await expect(
+        ticketBookingSystemBuyer2.tradeTicket(buyer2.address, 1, {
+          value: 1500,
+        })
+      ).to.be.revertedWith("The payment amount is not correct.");
+
+      await expect(
+        await ticketBookingSystemBuyer2.tradeTicket(buyer2.address, 1, {
+          value: 1000,
+        })
+      ).to.changeEtherBalances([buyer1, buyer2], [1000, -1000]);
+      expect(await ticketsBuyer1.ownerOf(1)).to.be.equal(buyer2.address);
+    });
+
+    it("ticket cannot be traded without BookingSystem", async function () {
+      ticketBookingSystem.connect(buyer1).buy(0, { value: seats[0].price });
+
+      const ticketsContractAddr = await ticketBookingSystem.tickets();
+      const ticketsBuyer1 =
+        TicketFactory.attach(ticketsContractAddr).connect(buyer1);
+      const ticketsBuyer2 =
+        TicketFactory.attach(ticketsContractAddr).connect(buyer2);
+
+      await ticketsBuyer1.setSellable(0, true, 1000);
+
+      await expect(
+        ticketsBuyer2.sellTo(buyer2.address, 0, { value: 1000 })
+      ).to.be.revertedWith("The calling address is not authorized.");
+    });
+  });
 });

@@ -3,15 +3,16 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
+
 //import "hardhat/console.sol";
 
 contract TicketBookingSystem {
     struct Seat {
         uint16 rowNumber;
         uint16 seatNumber;
-        uint64 timestamp;  // unix timestamp (in seconds) of the show
+        uint64 timestamp; // unix timestamp (in seconds) of the show
         string seatViewURL;
-        uint price;
+        uint256 price;
     }
 
     //Public attributes
@@ -36,8 +37,14 @@ contract TicketBookingSystem {
     }
 
     modifier correctTimeFrame(uint256 tokenId) {
-        require(block.timestamp <= seats[tokenId].timestamp, "The ticket has expired");
-        require(block.timestamp >= seats[tokenId].timestamp - validationTimeframe, "The validation period hasn't started.");
+        require(
+            block.timestamp <= seats[tokenId].timestamp,
+            "The ticket has expired"
+        );
+        require(
+            block.timestamp >= seats[tokenId].timestamp - validationTimeframe,
+            "The validation period hasn't started."
+        );
         _;
     }
 
@@ -85,6 +92,10 @@ contract TicketBookingSystem {
         return ticketOwner;
     }
 
+    /**
+    Invoked when the show has been cancelled.
+    Refunds all ticket owners and destroys their tickets.
+    */
     function refund() public {
         for (uint256 id = 0; id < seats.length; ++id) {
             try tickets.ownerOf(id) returns (address owner) {
@@ -98,21 +109,32 @@ contract TicketBookingSystem {
     }
 
     //Destroys the ticket and creates a POSTER token
-    function validate(uint256 tokenId) public correctTimeFrame(tokenId) returns (uint256) {
-        require(tickets.ownerOf(tokenId) == msg.sender, "The owner of the ticket is invalid."); //The owner of the ticket needs to call this
-        tickets.burnTKT(tokenId);        //Destroy original ticket
-        return posters.mintPTR(msg.sender, tokenId);  //Create poster that serves as proof-of-purchase
+    function validate(uint256 tokenId)
+        public
+        correctTimeFrame(tokenId)
+        returns (uint256)
+    {
+        require(
+            tickets.ownerOf(tokenId) == msg.sender,
+            "The owner of the ticket is invalid."
+        ); //The owner of the ticket needs to call this
+        tickets.burnTKT(tokenId); //Destroy original ticket
+        return posters.mintPTR(msg.sender, tokenId); //Create poster that serves as proof-of-purchase
     }
 
-    function tradeTicket(
-        address from,
-        address to,
-        uint256 price
-    ) public {}
+    /* Implements second-hand ticket trading.
+    Relies on Ticket.sellTo for verification of sellability and price.
+    */
+    function tradeTicket(address buyer, uint256 tokenId) public payable {
+        tickets.sellTo{value: msg.value}(buyer, tokenId);
+    }
 }
 
 contract Ticket is ERC721, ERC721Burnable {
     address public minterAddress;
+
+    mapping(uint256 => uint256) private _salePrice;
+    mapping(uint256 => bool) private _isSellable;
 
     constructor() ERC721("Ticket", "TKT") {
         minterAddress = msg.sender;
@@ -126,6 +148,14 @@ contract Ticket is ERC721, ERC721Burnable {
         _;
     }
 
+    modifier onlyOwner(uint256 tokenId) {
+        require(
+            msg.sender == ownerOf(tokenId),
+            "The calling address is not the owner."
+        );
+        _;
+    }
+
     function mintTKT(address recipient, uint256 seatId)
         public
         onlySalesManager
@@ -134,12 +164,62 @@ contract Ticket is ERC721, ERC721Burnable {
         _safeMint(recipient, seatId);
         return seatId;
     }
-    
-    function burnTKT(uint256 seatId)
+
+    function burnTKT(uint256 seatId) public onlySalesManager {
+        _burn(seatId);
+    }
+
+    /**
+    @notice Set whether the ticket can be re-sold. Available only to the owner.
+    @param tokenId Ticket id to modify
+    @param isSellable Whether others can buy this ticket
+    @param price Price of the ticket on secondary market. Ignored if `isSellable` is false
+     */
+    function setSellable(
+        uint256 tokenId,
+        bool isSellable,
+        uint256 price
+    ) public onlyOwner(tokenId) {
+        _isSellable[tokenId] = isSellable;
+        if (isSellable) {
+            _salePrice[tokenId] = price;
+        } else {
+            _salePrice[tokenId] = 0;
+        }
+    }
+
+    /**
+    Returns information if given ticket is sellable.
+    If it is sellable, returns the price. If not, the second returned value should be ignored.
+     */
+    function getResalePrice(uint256 tokenId)
         public
+        view
+        returns (bool isSellable, uint256 price)
+    {
+        isSellable = _isSellable[tokenId];
+        if (isSellable) {
+            price = _salePrice[tokenId];
+        }
+    }
+
+    /* Requires the caller to be BookingSystem.
+     * All trades are made to pass through the BookingSystem due to
+     * theassignment requirement to have a tradeTicket function.*/
+    function sellTo(address to, uint256 tokenId)
+        public
+        payable
         onlySalesManager
     {
-        _burn(seatId);
+        require(_isSellable[tokenId], "The ticket is not sellable.");
+        require(
+            msg.value == _salePrice[tokenId],
+            "The payment amount is not correct."
+        );
+
+        address payable owner = payable(ownerOf(tokenId));
+        _transfer(owner, to, tokenId);
+        owner.transfer(msg.value);
     }
 }
 
