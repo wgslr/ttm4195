@@ -1,6 +1,8 @@
 async function main() {
   // We get the contract to deploy
-  const Greeter = await ethers.getContractFactory("TicketBookingSystem");
+  const ticketBookingSystemFactory = await ethers.getContractFactory(
+    "TicketBookingSystem"
+  );
 
   const seats = [
     {
@@ -11,9 +13,13 @@ async function main() {
       price: 30,
     },
   ];
-  const greeter = await Greeter.deploy("Batman", [seats]);
+  const ticketBookingSystem = await ticketBookingSystemFactory.deploy(
+    "Batman",
+    2 * 3600 * 1000,
+    seats
+  );
 
-  console.log("TicketBookingSystem deployed to:", greeter.address);
+  console.log("TicketBookingSystem deployed to:", ticketBookingSystem.address);
 }
 
 main()

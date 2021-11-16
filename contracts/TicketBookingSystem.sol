@@ -47,7 +47,7 @@ contract TicketBookingSystem {
 
     constructor(
         string memory title,
-        uint64 _validationTimeframe,
+        uint64 _validationTimeframe, // time before show timestamp when the ticket can be validated
         Seat[] memory _seats
     ) {
         console.log(

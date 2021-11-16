@@ -25,6 +25,7 @@ describe("TicketBookingSystem", function () {
     );
     const ticketBookingSystem = await TicketBookingSystemFactory.deploy(
       "Lion King",
+      2 * 3600 * 1000,
       seats
     );
     await ticketBookingSystem.deployed();
@@ -37,6 +38,7 @@ describe("TicketBookingSystem", function () {
     );
     const ticketBookingSystem = await TicketBookingSystemFactory.deploy(
       "Lion King",
+      2 * 3600 * 1000,
       seats
     );
     await ticketBookingSystem.deployed();
@@ -53,6 +55,7 @@ describe("TicketBookingSystem", function () {
     );
     const ticketBookingSystem = await TicketBookingSystemFactory.deploy(
       "Lion King",
+      2 * 3600 * 1000,
       seats
     );
 
@@ -76,6 +79,7 @@ describe("TicketBookingSystem", function () {
     const TicketFactory = await ethers.getContractFactory("Ticket");
     const ticketBookingSystem = await TicketBookingSystemFactory.deploy(
       "Lion King",
+      2 * 3600 * 1000,
       seats
     );
 
@@ -98,6 +102,7 @@ describe("TicketBookingSystem", function () {
     const TicketFactory = await ethers.getContractFactory("Ticket");
     const ticketBookingSystem = await TicketBookingSystemFactory.deploy(
       "Lion King",
+      2 * 3600 * 1000,
       seats
     );
     const ticketsContractAddr = await ticketBookingSystem.tickets();
