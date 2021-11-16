@@ -8,7 +8,7 @@ async function main() {
     {
       rowNumber: 3,
       seatNumber: 4,
-      showTimestamp: 500,
+      timestamp: 500,
       seatViewURL: "wikipedia.org",
       price: 30,
     },
