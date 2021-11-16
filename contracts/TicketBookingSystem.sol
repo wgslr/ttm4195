@@ -110,7 +110,7 @@ contract TicketBookingSystem {
     ) public {}
 }
 
-contract Ticket is ERC721 {
+contract Ticket is ERC721, ERC721Burnable {
     address public minter_address;
 
     constructor() ERC721("Ticket", "TKT") {
@@ -133,15 +133,6 @@ contract Ticket is ERC721 {
         uint256 newItemId = seatId;
         _safeMint(recipient, newItemId);
         return newItemId;
-    }
-
-    function burn(uint256 tokenId) public {
-        //solhint-disable-next-line max-line-length
-        require(
-            _isApprovedOrOwner(_msgSender(), tokenId),
-            "ERC721Burnable: caller is not owner nor approved"
-        );
-        _burn(tokenId);
     }
 }
 

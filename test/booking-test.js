@@ -83,7 +83,10 @@ describe("TicketBookingSystem", function () {
       seats
     );
 
-    await ticketBookingSystem.connect(buyer1).buy(0, { value: seats[0].price });
+    const price = seats[0].price;
+    await expect(
+      await ticketBookingSystem.connect(buyer1).buy(0, { value: price })
+    ).to.changeEtherBalances([ticketBookingSystem, buyer1], [price, -price]);
 
     const ticketsContractAddr = await ticketBookingSystem
       .connect(buyer1)
