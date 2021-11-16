@@ -10,13 +10,13 @@ contract TicketBookingSystem {
     struct Seat {
         uint16 rowNumber;
         uint16 seatNumber;
-        uint64 timestamp;
+        uint64 timestamp; // unix timestamp (in seconds) of the show
         string seatViewURL;
         uint256 price;
     }
 
     //Public attributes
-    string public show_title;
+    string public showTitle;
     uint64 public validationTimeframe;
     Seat[] public seats;
 
@@ -38,17 +38,19 @@ contract TicketBookingSystem {
 
     modifier correctTimeFrame(uint256 tokenId) {
         require(
-            block.timestamp * 1000 <= seats[tokenId].timestamp &&
-                block.timestamp * 1000 >=
-                seats[tokenId].timestamp - validationTimeframe,
+            block.timestamp <= seats[tokenId].timestamp,
             "The ticket has expired"
+        );
+        require(
+            block.timestamp >= seats[tokenId].timestamp - validationTimeframe,
+            "The validation period hasn't started."
         );
         _;
     }
 
     constructor(
         string memory title,
-        uint64 _validationTimeframe, // time before show timestamp when the ticket can be validated
+        uint64 _validationTimeframe, // time before show timestamp when the ticket can be validated (in seconds)
         Seat[] memory _seats
     ) {
         //console.log(
@@ -56,7 +58,7 @@ contract TicketBookingSystem {
         //    title,
         //    _seats.length
         //);
-        show_title = title;
+        showTitle = title;
         validationTimeframe = _validationTimeframe;
         for (uint256 i = 0; i < _seats.length; ++i) {
             seats.push(_seats[i]);
@@ -84,7 +86,7 @@ contract TicketBookingSystem {
         //verifies tickets owners\
         address ticketOwner = tickets.ownerOf(tokenId);
         require(
-            block.timestamp * 1000 <= seats[tokenId].timestamp,
+            block.timestamp <= seats[tokenId].timestamp,
             "The ticket has expired"
         );
         return ticketOwner;
@@ -106,7 +108,19 @@ contract TicketBookingSystem {
         }
     }
 
-    function validate(uint256 tokenId) public correctTimeFrame(tokenId) {}
+    //Destroys the ticket and creates a POSTER token
+    function validate(uint256 tokenId)
+        public
+        correctTimeFrame(tokenId)
+        returns (uint256)
+    {
+        require(
+            tickets.ownerOf(tokenId) == msg.sender,
+            "The owner of the ticket is invalid."
+        ); //The owner of the ticket needs to call this
+        tickets.burnTKT(tokenId); //Destroy original ticket
+        return posters.mintPTR(msg.sender, tokenId); //Create poster that serves as proof-of-purchase
+    }
 
     /* Implements second-hand ticket trading.
     Relies on Ticket.sellTo for verification of sellability and price.
@@ -117,18 +131,18 @@ contract TicketBookingSystem {
 }
 
 contract Ticket is ERC721, ERC721Burnable {
-    address public minter_address;
+    address public minterAddress;
 
     mapping(uint256 => uint256) private _salePrice;
     mapping(uint256 => bool) private _isSellable;
 
     constructor() ERC721("Ticket", "TKT") {
-        minter_address = msg.sender;
+        minterAddress = msg.sender;
     }
 
     modifier onlySalesManager() {
         require(
-            msg.sender == minter_address,
+            msg.sender == minterAddress,
             "The calling address is not authorized."
         );
         _;
@@ -147,14 +161,12 @@ contract Ticket is ERC721, ERC721Burnable {
         onlySalesManager
         returns (uint256)
     {
-        uint256 newItemId = seatId;
-        _safeMint(recipient, newItemId);
-        return newItemId;
+        _safeMint(recipient, seatId);
+        return seatId;
     }
 
-    function burnTKT(uint256 seatId) public onlySalesManager returns (bool) {
+    function burnTKT(uint256 seatId) public onlySalesManager {
         _burn(seatId);
-        return true;
     }
 
     /**
@@ -207,30 +219,27 @@ contract Ticket is ERC721, ERC721Burnable {
 }
 
 contract Poster is ERC721 {
-    address public minter_address;
+    address public minterAddress;
     uint256 private tokenId;
 
     constructor() ERC721("Poster", "PTR") {
-        minter_address = msg.sender;
-        tokenId = 0;
+        minterAddress = msg.sender;
     }
 
     modifier onlySalesManager() {
         require(
-            msg.sender == minter_address,
+            msg.sender == minterAddress,
             "The calling address is not authorized."
         );
         _;
     }
 
-    function mintPTR(address recipient)
-        private
+    function mintPTR(address recipient, uint256 itemId)
+        public
         onlySalesManager
         returns (uint256)
     {
-        uint256 newItemId = tokenId;
-        _safeMint(recipient, newItemId);
-        tokenId += 1;
-        return newItemId;
+        _safeMint(recipient, itemId);
+        return itemId;
     }
 }
