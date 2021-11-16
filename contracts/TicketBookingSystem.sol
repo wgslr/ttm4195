@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
-import "hardhat/console.sol";
+//import "hardhat/console.sol";
 
 contract TicketBookingSystem {
     struct Seat {
@@ -11,7 +11,7 @@ contract TicketBookingSystem {
         uint16 seatNumber;
         uint64 timestamp;
         string seatViewURL;
-        uint256 price;
+        uint price;
     }
 
     //Public attributes
@@ -50,11 +50,11 @@ contract TicketBookingSystem {
         uint64 _validationTimeframe, // time before show timestamp when the ticket can be validated
         Seat[] memory _seats
     ) {
-        console.log(
-            'Initializing BookingSystem "%s" with %d seats',
-            title,
-            _seats.length
-        );
+        //console.log(
+        //    'Initializing BookingSystem "%s" with %d seats',
+        //    title,
+        //    _seats.length
+        //);
         show_title = title;
         validationTimeframe = _validationTimeframe;
         for (uint256 i = 0; i < _seats.length; ++i) {
@@ -69,7 +69,7 @@ contract TicketBookingSystem {
     function buy(uint256 seatId) public payable returns (uint256 newTokenId) {
         //buys tickets
         require(
-            msg.value == seats[seatId].price,
+            msg.value >= seats[seatId].price,
             "The price of the ticket is not correct."
         );
         require(
@@ -93,7 +93,7 @@ contract TicketBookingSystem {
         for (uint256 id = 0; id < seats.length; ++id) {
             try tickets.ownerOf(id) returns (address owner) {
                 payable(owner).transfer(seats[id].price);
-                tickets.burn(id);
+                tickets.burnTKT(id);
             } catch {
                 // if the ticket does not exist, there is nothing to return
                 continue;
@@ -133,6 +133,15 @@ contract Ticket is ERC721, ERC721Burnable {
         uint256 newItemId = seatId;
         _safeMint(recipient, newItemId);
         return newItemId;
+    }
+    
+    function burnTKT(uint256 seatId)
+        public
+        onlySalesManager
+        returns (bool)
+    {
+        _burn(seatId);
+        return true;
     }
 }
 
