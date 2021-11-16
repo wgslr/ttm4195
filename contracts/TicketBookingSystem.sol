@@ -18,10 +18,12 @@ contract TicketBookingSystem {
     string public show_title;
     Seat[] public seats;
 
+    // tokens must be public for everyone to see ownership
+    Ticket public tickets = new Ticket();
+    Poster public posters = new Poster();
+
     //Private attributes
     address private creator;
-    Ticket tickets = new Ticket();
-    Poster posters = new Poster();
 
     //modifiers
     modifier onlySalesManager() {
@@ -62,7 +64,7 @@ contract TicketBookingSystem {
             seats[seatId].timestamp > block.timestamp,
             "The specified ticket is no longer valid."
         );
-        newTokenId = tickets.mintTKT(msg.sender, seatId);
+        return tickets.mintTKT(msg.sender, seatId);
     }
 
     function verify(uint256 tokenId) public view returns (address) {
