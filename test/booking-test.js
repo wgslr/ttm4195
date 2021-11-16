@@ -81,15 +81,32 @@ describe("TicketBookingSystem", function () {
 
     await ticketBookingSystem.connect(buyer1).buy(0, { value: seats[0].price });
 
-    console.log(
-      "Tickets contract: ",
-      await ticketBookingSystem.connect(buyer1).tickets()
-    );
     const ticketsContractAddr = await ticketBookingSystem
       .connect(buyer1)
       .tickets();
 
     const tickets = TicketFactory.attach(ticketsContractAddr);
     expect(await tickets.ownerOf(0)).to.be.equal(buyer1.address);
+  });
+
+  it("People cannot buy mint tickets without using BookingSystem", async function () {
+    const [seller, buyer1, buyer2] = await ethers.getSigners();
+    const TicketBookingSystemFactory = await ethers.getContractFactory(
+      "TicketBookingSystem",
+      seller
+    );
+    const TicketFactory = await ethers.getContractFactory("Ticket");
+    const ticketBookingSystem = await TicketBookingSystemFactory.deploy(
+      "Lion King",
+      seats
+    );
+    const ticketsContractAddr = await ticketBookingSystem.tickets();
+    const tickets = TicketFactory.attach(ticketsContractAddr).connect(buyer1);
+
+    await expect(tickets.mintTKT(buyer1.address, 0)).to.be.revertedWith(
+      "The calling address is not authorized."
+    );
+
+    const tickets2 = TicketFactory.attach(ticketsContractAddr).connect(seller);
   });
 });
