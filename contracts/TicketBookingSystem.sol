@@ -36,12 +36,8 @@ contract TicketBookingSystem {
     }
 
     modifier correctTimeFrame(uint256 tokenId) {
-        require(
-            block.timestamp * 1000 <= seats[tokenId].timestamp &&
-                block.timestamp * 1000 >=
-                seats[tokenId].timestamp - validationTimeframe,
-            "The ticket has expired"
-        );
+        require(block.timestamp * 1000 <= seats[tokenId].timestamp, "The ticket has expired");
+        require(block.timestamp * 1000 >= seats[tokenId].timestamp - validationTimeframe, "The validation period hasn't started.");
         _;
     }
 
@@ -101,7 +97,12 @@ contract TicketBookingSystem {
         }
     }
 
-    function validate(uint256 tokenId) public correctTimeFrame(tokenId) {}
+    //Destroys the ticket and creates a POSTER token
+    function validate(uint256 tokenId) public correctTimeFrame(tokenId) returns (uint256) {
+        require(tickets.ownerOf(tokenId) == msg.sender, "The owner of the ticket is invalid."); //The owner of the ticket needs to call this
+        tickets.burnTKT(tokenId);        //Destroy original ticket
+        return posters.mintPTR(msg.sender, tokenId);  //Create poster that serves as proof-of-purchase
+    }
 
     function tradeTicket(
         address from,
@@ -130,18 +131,15 @@ contract Ticket is ERC721, ERC721Burnable {
         onlySalesManager
         returns (uint256)
     {
-        uint256 newItemId = seatId;
-        _safeMint(recipient, newItemId);
-        return newItemId;
+        _safeMint(recipient, seatId);
+        return seatId;
     }
     
     function burnTKT(uint256 seatId)
         public
         onlySalesManager
-        returns (bool)
     {
         _burn(seatId);
-        return true;
     }
 }
 
@@ -151,7 +149,6 @@ contract Poster is ERC721 {
 
     constructor() ERC721("Poster", "PTR") {
         minter_address = msg.sender;
-        tokenId = 0;
     }
 
     modifier onlySalesManager() {
@@ -162,14 +159,12 @@ contract Poster is ERC721 {
         _;
     }
 
-    function mintPTR(address recipient)
-        private
+    function mintPTR(address recipient, uint256 itemId)
+        public
         onlySalesManager
         returns (uint256)
     {
-        uint256 newItemId = tokenId;
-        _safeMint(recipient, newItemId);
-        tokenId += 1;
-        return newItemId;
+        _safeMint(recipient, itemId);
+        return itemId;
     }
 }
