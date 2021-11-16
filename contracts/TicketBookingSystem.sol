@@ -90,6 +90,10 @@ contract TicketBookingSystem {
         return ticketOwner;
     }
 
+    /**
+    Invoked when the show has been cancelled.
+    Refunds all ticket owners and destroys their tickets.
+    */
     function refund() public {
         for (uint256 id = 0; id < seats.length; ++id) {
             try tickets.ownerOf(id) returns (address owner) {
