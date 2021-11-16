@@ -17,19 +17,34 @@ describe("TicketBookingSystem", function () {
       seatViewURL: "wikipedia.org",
       price: 30,
     },
+    {
+      rowNumber: 4,
+      seatNumber: 1,
+      timestamp: new Date("2100-01-01").getTime(),
+      seatViewURL: "wikipedia.org",
+      price: 20,
+    },
+    {
+      rowNumber: 4,
+      seatNumber: 2,
+      timestamp: new Date("2100-01-01").getTime(),
+      seatViewURL: "wikipedia.org",
+      price: 20,
+    },
   ];
 
   let TicketBookingSystemFactory;
   let TicketFactory;
-  let seller, buyer1, buyer2;
+  let seller, buyer1, buyer2, buyer3, buyer4;
   let ticketBookingSystem;
 
   before(async function () {
+    [seller, buyer1, buyer2, buyer3, buyer4] = await ethers.getSigners();
     TicketBookingSystemFactory = await ethers.getContractFactory(
-      "TicketBookingSystem"
+      "TicketBookingSystem",
+      seller
     );
     TicketFactory = await ethers.getContractFactory("Ticket");
-    [seller, buyer1, buyer2] = await ethers.getSigners();
   });
 
   beforeEach(async function () {
@@ -90,5 +105,23 @@ describe("TicketBookingSystem", function () {
     await expect(tickets.mintTKT(buyer1.address, 0)).to.be.revertedWith(
       "The calling address is not authorized."
     );
+  });
+
+  describe("Revert", function () {
+    it("refunds buyers", async function () {
+      ticketBookingSystem.connect(buyer1).buy(0, { value: seats[0].price });
+      ticketBookingSystem.connect(buyer1).buy(1, { value: seats[1].price });
+      ticketBookingSystem.connect(buyer2).buy(2, { value: seats[2].price });
+
+      const totalSpent = seats[0].price + seats[1].price + seats[2].price;
+
+      // TODO: refund() fails, because BookingSystem is not Ticket owner and cannot invoke burn()
+      await expect(
+        await ticketBookingSystem.connect(seller).refund()
+      ).to.changeEtherBalances(
+        [ticketBookingSystem, buyer1, buyer2],
+        [-totalSpent, (seats[0].price = seats[1].price), seats[2].price]
+      );
+    });
   });
 });
