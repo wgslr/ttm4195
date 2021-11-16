@@ -120,7 +120,7 @@ describe("TicketBookingSystem", function () {
         await ticketBookingSystem.connect(seller).refund()
       ).to.changeEtherBalances(
         [ticketBookingSystem, buyer1, buyer2],
-        [-totalSpent, (seats[0].price = seats[1].price), seats[2].price]
+        [-totalSpent, seats[0].price + seats[1].price, seats[2].price]
       );
     });
   });
