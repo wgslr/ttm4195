@@ -50,7 +50,7 @@ describe("TicketBookingSystem", function () {
   beforeEach(async function () {
     ticketBookingSystem = await TicketBookingSystemFactory.deploy(
       "Lion King",
-      2 * 3600 * 1000,
+      2 * 3600,
       seats
     );
     await ticketBookingSystem.deployed();
@@ -59,11 +59,11 @@ describe("TicketBookingSystem", function () {
   it("Constructor should register show title", async function () {
     const ticketBookingSystem = await TicketBookingSystemFactory.deploy(
       "Lion King",
-      2 * 3600 * 1000,
+      2 * 3600,
       seats
     );
     await ticketBookingSystem.deployed();
-    expect(await ticketBookingSystem.show_title()).to.equal("Lion King");
+    expect(await ticketBookingSystem.showTitle()).to.equal("Lion King");
   });
 
   it("Prevents sales with insufficient payment", async function () {

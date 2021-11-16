@@ -15,7 +15,7 @@ async function main() {
   ];
   const ticketBookingSystem = await ticketBookingSystemFactory.deploy(
     "Batman",
-    2 * 3600 * 1000,
+    2 * 3600,
     seats
   );
 
