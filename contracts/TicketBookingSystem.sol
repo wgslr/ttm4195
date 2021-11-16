@@ -188,6 +188,10 @@ contract Ticket is ERC721, ERC721Burnable {
         }
     }
 
+    /**
+    Returns information if given ticket is sellable.
+    If it is sellable, returns the price. If not, the second returned value should be ignored.
+     */
     function getResalePrice(uint256 tokenId)
         public
         view
@@ -199,8 +203,9 @@ contract Ticket is ERC721, ERC721Burnable {
         }
     }
 
-    /* Applies onlySaleManger, because the BookingSystem must manage trades, as per the assignment requirement
-        to have a tradeTicket function */
+    /* Requires the caller to be BookingSystem.
+     * All trades are made to pass through the BookingSystem due to
+     * theassignment requirement to have a tradeTicket function.*/
     function sellTo(address to, uint256 tokenId)
         public
         payable
