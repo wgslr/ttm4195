@@ -104,11 +104,12 @@ contract TicketBookingSystem {
 
     function validate(uint256 tokenId) public correctTimeFrame(tokenId) {}
 
-    function tradeTicket(
-        address from,
-        address to,
-        uint256 price
-    ) public {}
+    /* Implements second-hand ticket trading.
+    Relies on Ticket.sellTo for verification of sellability and price.
+    */
+    function tradeTicket(address buyer, uint256 tokenId) public payable {
+        tickets.sellTo{value: msg.value}(buyer, tokenId);
+    }
 }
 
 contract Ticket is ERC721, ERC721Burnable {
@@ -180,6 +181,24 @@ contract Ticket is ERC721, ERC721Burnable {
         if (isSellable) {
             price = _salePrice[tokenId];
         }
+    }
+
+    /* Applies onlySaleManger, because the BookingSystem must manage trades, as per the assignment requirement
+        to have a tradeTicket function */
+    function sellTo(address to, uint256 tokenId)
+        public
+        payable
+        onlySalesManager
+    {
+        require(_isSellable[tokenId], "The ticket is not sellable.");
+        require(
+            msg.value == _salePrice[tokenId],
+            "The payment amount is not correct."
+        );
+
+        address payable owner = payable(ownerOf(tokenId));
+        _transfer(owner, to, tokenId);
+        owner.transfer(msg.value);
     }
 }
 
