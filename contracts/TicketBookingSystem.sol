@@ -65,20 +65,16 @@ contract TicketBookingSystem {
         }
     }
 
-    //functions
-    function releasePoster() private {}
-
-    //main functions
+    //Function for buying tickets
     function buy(uint256 seatId) public payable returns (uint256 newTokenId) {
-        //buys tickets
         require(
-            msg.value >= seats[seatId].price,
+            msg.value == seats[seatId].price,
             "The price of the ticket is not correct."
-        );
+        );      //The paid value needs to be the same as the price
         require(
             seats[seatId].timestamp > block.timestamp,
             "The specified ticket is no longer valid."
-        );
+        );      //The show time is in the future
         return tickets.mintTKT(msg.sender, seatId);
     }
 
@@ -95,8 +91,9 @@ contract TicketBookingSystem {
     /**
     Invoked when the show has been cancelled.
     Refunds all ticket owners and destroys their tickets.
+    Can only be called by the Sales Manager.
     */
-    function refund() public {
+    function refund() public onlySalesManager {
         for (uint256 id = 0; id < seats.length; ++id) {
             try tickets.ownerOf(id) returns (address owner) {
                 payable(owner).transfer(seats[id].price);
@@ -108,7 +105,7 @@ contract TicketBookingSystem {
         }
     }
 
-    //Destroys the ticket and creates a POSTER token
+    //Destroys the ticket and creates a POSTER token. Can only be called during a specific timeframe
     function validate(uint256 tokenId)
         public
         correctTimeFrame(tokenId)
