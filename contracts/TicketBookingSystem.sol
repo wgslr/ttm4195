@@ -10,6 +10,8 @@ contract TicketBookingSystem {
     struct Seat {
         uint16 rowNumber;
         uint16 seatNumber;
+        // each TicketBookingSystem handles a single show title,
+        // which may be played multiple times, distinguished by the timestamp
         uint64 timestamp; // unix timestamp (in seconds) of the show
         string seatViewURL;
         uint256 price;
@@ -77,10 +79,10 @@ contract TicketBookingSystem {
             "The specified ticket is no longer valid."
         ); //The show time is in the future
         require(
-            seats[seatId].timestamp - validationTimeframe >= block.timestamp, 
+            seats[seatId].timestamp - validationTimeframe >= block.timestamp,
             "The Validation already started and the ticket can't be bought anymore"
             // tickets cannot be bought once the validation has started
-        ); 
+        );
         return tickets.mintTKT(msg.sender, seatId);
     }
 
@@ -101,12 +103,15 @@ contract TicketBookingSystem {
     */
     function refund() public onlySalesManager {
         for (uint256 id = 0; id < seats.length; ++id) {
-            try tickets.ownerOf(id) returns (address owner) {
-                payable(owner).transfer(seats[id].price);
-                tickets.burnTKT(id);
-            } catch {
-                // if the ticket does not exist, there is nothing to return
-                continue;
+            // do not refund tickets for past shows
+            if (seats[id].timestamp > block.timestamp) {
+                try tickets.ownerOf(id) returns (address owner) {
+                    tickets.burnTKT(id);
+                    payable(owner).transfer(seats[id].price);
+                } catch {
+                    // if the ticket does not exist, there is nothing to return
+                    continue;
+                }
             }
         }
     }
@@ -237,7 +242,11 @@ contract Ticket is ERC721, ERC721Burnable {
         delete _swappableWith[tokenId];
     }
 
-    function buySellableTicket(uint256 tokenId) public payable ticketExists(tokenId) {
+    function buySellableTicket(uint256 tokenId)
+        public
+        payable
+        ticketExists(tokenId)
+    {
         require(_isSellable[tokenId], "The ticket is not sellable.");
         require(
             msg.value == _salePrice[tokenId],
