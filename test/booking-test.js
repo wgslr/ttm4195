@@ -98,6 +98,16 @@ describe("TicketBookingSystem", function () {
     expect(await tickets.ownerOf(0)).to.be.equal(buyer1.address);
   });
 
+  it("ticket knows row", async function () {
+    ticketBookingSystem.connect(buyer1).buy(0, { value: seats[0].price });
+    const ticketsContractAddr = await ticketBookingSystem
+      .connect(buyer1)
+      .tickets();
+    const tickets = TicketFactory.attach(ticketsContractAddr);
+    expect(await tickets.getRow(0)).to.be.equal(seats[0].rowNumber);
+    await expect(tickets.getRow(1)).to.be.reverted;
+  });
+
   it("People cannot buy mint tickets without using BookingSystem", async function () {
     const ticketsContractAddr = await ticketBookingSystem.tickets();
     const tickets = TicketFactory.attach(ticketsContractAddr).connect(buyer1);
@@ -260,5 +270,9 @@ describe("TicketBookingSystem", function () {
       expect(await ticketsBuyer1.ownerOf(1)).to.be.equal(buyer2.address);
       expect(await ticketsBuyer1.ownerOf(2)).to.be.equal(buyer1.address);
     });
+  });
+
+  it("follows assignment scenario", async function () {
+    const [sellerA, customerB, resellerC, buyerD] = await ethers.getSigners();
   });
 });
