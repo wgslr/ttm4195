@@ -125,7 +125,7 @@ describe("TicketBookingSystem", function () {
     });
   });
 
-  describe("Trading", function () {
+  describe("Ticket reselling", function () {
     it("owner can set sale price", async function () {
       ticketBookingSystem.connect(buyer1).buy(0, { value: seats[0].price });
       ticketBookingSystem.connect(buyer1).buy(1, { value: seats[1].price });
@@ -202,6 +202,65 @@ describe("TicketBookingSystem", function () {
         })
       ).to.changeEtherBalances([buyer1, buyer2], [1000, -1000]);
       expect(await ticketsBuyer1.ownerOf(1)).to.be.equal(buyer2.address);
+    });
+  });
+
+
+  describe("Ticket swapping", function () {
+    it("owner can decide with which tickets will his/her ticket be swappable", async function () {
+      ticketBookingSystem.connect(buyer1).buy(0, { value: seats[0].price });
+      ticketBookingSystem.connect(buyer1).buy(1, { value: seats[1].price });
+
+      const ticketsContractAddr = await ticketBookingSystem.tickets();
+      const ticketsBuyer1 =
+        TicketFactory.attach(ticketsContractAddr).connect(buyer1);
+
+      await ticketsBuyer1.setSwappable(1,[2, 3]);
+
+      const swappableTickets = await ticketsBuyer1.getSwappableTickets(1);
+      // each array element asserted separaetly to trigger correct BigNumber handling
+      expect(swappableTickets[0]).to.equal(2);
+      expect(swappableTickets[1]).to.equal(3);
+
+      expect(await ticketsBuyer1.getSwappableTickets(0)).to.have.lengthOf(0);
+    });
+
+    it("non-owner can not set swappable tickets for the ticket", async function () {
+      ticketBookingSystem.connect(buyer1).buy(0, { value: seats[0].price });
+
+      const ticketsContractAddr = await ticketBookingSystem.tickets();
+      const ticketsBuyer2 =
+        TicketFactory.attach(ticketsContractAddr).connect(buyer2);
+
+      await expect(ticketsBuyer2.setSwappable(0,[2, 3])).to.be.revertedWith(
+        "The calling address is not the owner."
+      );
+      await expect(ticketsBuyer2.setSwappable(1,[2, 3])).to.be.revertedWith(
+        "The ticket with this ID does not exist."
+      );
+    });
+
+    it("swappable ticket can be swapped", async function () {
+      ticketBookingSystem.connect(buyer1).buy(0, { value: seats[0].price });
+      ticketBookingSystem.connect(buyer1).buy(1, { value: seats[1].price });
+      ticketBookingSystem.connect(buyer2).buy(2, { value: seats[2].price });
+
+      const ticketsContractAddr = await ticketBookingSystem.tickets();
+      const ticketsBuyer1 =
+        TicketFactory.attach(ticketsContractAddr).connect(buyer1);
+      const ticketsBuyer2 =
+        TicketFactory.attach(ticketsContractAddr).connect(buyer2);
+
+      await ticketsBuyer1.setSwappable(1, [2]);
+
+      await expect(
+        ticketsBuyer2.swapTickets(0, 2)
+      ).to.be.revertedWith("The tickets are not swappable.");
+
+
+      await ticketsBuyer2.swapTickets(1, 2);
+      expect(await ticketsBuyer1.ownerOf(1)).to.be.equal(buyer2.address);
+      expect(await ticketsBuyer1.ownerOf(2)).to.be.equal(buyer1.address);
     });
   });
 });
