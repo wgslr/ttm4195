@@ -129,10 +129,6 @@ contract TicketBookingSystem {
         tickets.burnTKT(tokenId); //Destroy original ticket
         return posters.mintPTR(msg.sender, tokenId); //Create poster that serves as proof-of-purchase
     }
-
-    function getRow(uint256 seatId) public view returns (uint16) {
-        return seats[seatId].rowNumber;
-    }
 }
 
 contract Ticket is ERC721, ERC721Burnable {
@@ -166,19 +162,6 @@ contract Ticket is ERC721, ERC721Burnable {
             "The calling address is not the owner."
         );
         _;
-    }
-
-    function getTitle() public view returns (string memory) {
-        return TicketBookingSystem(minterAddress).showTitle();
-    }
-
-    function getRow(uint256 tokenId)
-        public
-        view
-        ticketExists(tokenId)
-        returns (uint16)
-    {
-        return TicketBookingSystem(minterAddress).getRow(tokenId);
     }
 
     function mintTKT(address recipient, uint256 seatId)
@@ -296,6 +279,70 @@ contract Ticket is ERC721, ERC721Burnable {
         // the new owner decides about ticket tradeability
         stopTicketTradeability(tokenToGetId);
         stopTicketTradeability(tokenToGiveId);
+    }
+
+    function getTitle() public view returns (string memory) {
+        return TicketBookingSystem(minterAddress).showTitle();
+    }
+
+    function getRow(uint256 tokenId)
+        public
+        view
+        ticketExists(tokenId)
+        returns (uint16)
+    {
+        (uint16 rowNumber, , , , ) = TicketBookingSystem(minterAddress).seats(
+            tokenId
+        );
+        return rowNumber;
+    }
+
+    function getSeatNumber(uint256 tokenId)
+        public
+        view
+        ticketExists(tokenId)
+        returns (uint16)
+    {
+        (, uint16 seatNumber, , , ) = TicketBookingSystem(minterAddress).seats(
+            tokenId
+        );
+        return seatNumber;
+    }
+
+    function getTimestamp(uint256 tokenId)
+        public
+        view
+        ticketExists(tokenId)
+        returns (uint64)
+    {
+        (, , uint64 timestamp, , ) = TicketBookingSystem(minterAddress).seats(
+            tokenId
+        );
+        return timestamp;
+    }
+
+    function getSeatViewURL(uint256 tokenId)
+        public
+        view
+        ticketExists(tokenId)
+        returns (string memory)
+    {
+        (, , , string memory url, ) = TicketBookingSystem(minterAddress).seats(
+            tokenId
+        );
+        return url;
+    }
+
+    function getPrice(uint256 tokenId)
+        public
+        view
+        ticketExists(tokenId)
+        returns (uint256)
+    {
+        (, , , , uint256 price) = TicketBookingSystem(minterAddress).seats(
+            tokenId
+        );
+        return price;
     }
 }
 

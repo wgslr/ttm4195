@@ -98,7 +98,7 @@ describe("TicketBookingSystem", function () {
     expect(await tickets.ownerOf(0)).to.be.equal(buyer1.address);
   });
 
-  it("ticket knows row", async function () {
+  it("ticket knows its data", async function () {
     ticketBookingSystem.connect(buyer1).buy(0, { value: seats[0].price });
     const ticketsContractAddr = await ticketBookingSystem
       .connect(buyer1)
@@ -106,6 +106,18 @@ describe("TicketBookingSystem", function () {
     const tickets = TicketFactory.attach(ticketsContractAddr);
     expect(await tickets.getRow(0)).to.be.equal(seats[0].rowNumber);
     await expect(tickets.getRow(1)).to.be.reverted;
+
+    expect(await tickets.getSeatNumber(0)).to.be.equal(seats[0].seatNumber);
+    await expect(tickets.getSeatNumber(1)).to.be.reverted;
+
+    expect(await tickets.getTimestamp(0)).to.be.equal(seats[0].timestamp);
+    await expect(tickets.getTimestamp(1)).to.be.reverted;
+
+    expect(await tickets.getSeatViewURL(0)).to.be.equal(seats[0].seatViewURL);
+    await expect(tickets.getSeatViewURL(1)).to.be.reverted;
+
+    expect(await tickets.getPrice(0)).to.be.equal(seats[0].price);
+    await expect(tickets.getPrice(1)).to.be.reverted;
   });
 
   it("People cannot buy mint tickets without using BookingSystem", async function () {
