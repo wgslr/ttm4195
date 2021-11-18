@@ -205,7 +205,6 @@ describe("TicketBookingSystem", function () {
     });
   });
 
-
   describe("Ticket swapping", function () {
     it("owner can decide with which tickets will his/her ticket be swappable", async function () {
       ticketBookingSystem.connect(buyer1).buy(0, { value: seats[0].price });
@@ -215,7 +214,7 @@ describe("TicketBookingSystem", function () {
       const ticketsBuyer1 =
         TicketFactory.attach(ticketsContractAddr).connect(buyer1);
 
-      await ticketsBuyer1.setSwappable(1,[2, 3]);
+      await ticketsBuyer1.setSwappable(1, [2, 3]);
 
       const swappableTickets = await ticketsBuyer1.getSwappableTickets(1);
       // each array element asserted separaetly to trigger correct BigNumber handling
@@ -232,10 +231,10 @@ describe("TicketBookingSystem", function () {
       const ticketsBuyer2 =
         TicketFactory.attach(ticketsContractAddr).connect(buyer2);
 
-      await expect(ticketsBuyer2.setSwappable(0,[2, 3])).to.be.revertedWith(
+      await expect(ticketsBuyer2.setSwappable(0, [2, 3])).to.be.revertedWith(
         "The calling address is not the owner."
       );
-      await expect(ticketsBuyer2.setSwappable(1,[2, 3])).to.be.revertedWith(
+      await expect(ticketsBuyer2.setSwappable(1, [2, 3])).to.be.revertedWith(
         "The ticket with this ID does not exist."
       );
     });
@@ -253,10 +252,9 @@ describe("TicketBookingSystem", function () {
 
       await ticketsBuyer1.setSwappable(1, [2]);
 
-      await expect(
-        ticketsBuyer2.swapTickets(0, 2)
-      ).to.be.revertedWith("The tickets are not swappable.");
-
+      await expect(ticketsBuyer2.swapTickets(0, 2)).to.be.revertedWith(
+        "The tickets are not swappable."
+      );
 
       await ticketsBuyer2.swapTickets(1, 2);
       expect(await ticketsBuyer1.ownerOf(1)).to.be.equal(buyer2.address);
