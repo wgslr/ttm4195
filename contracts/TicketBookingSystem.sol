@@ -58,6 +58,7 @@ contract TicketBookingSystem {
         //    title,
         //    _seats.length
         //);
+        creator = msg.sender;
         showTitle = title;
         validationTimeframe = _validationTimeframe;
         for (uint256 i = 0; i < _seats.length; ++i) {
@@ -117,13 +118,6 @@ contract TicketBookingSystem {
         ); //The owner of the ticket needs to call this
         tickets.burnTKT(tokenId); //Destroy original ticket
         return posters.mintPTR(msg.sender, tokenId); //Create poster that serves as proof-of-purchase
-    }
-
-    /* Implements second-hand ticket trading.
-    Relies on Ticket.sellTo for verification of sellability and price.
-    */
-    function tradeTicket(address buyer, uint256 tokenId) public payable {
-        tickets.sellTo{value: msg.value}(buyer, tokenId);
     }
 }
 
@@ -200,13 +194,9 @@ contract Ticket is ERC721, ERC721Burnable {
         }
     }
 
-    /* Requires the caller to be BookingSystem.
-     * All trades are made to pass through the BookingSystem due to
-     * theassignment requirement to have a tradeTicket function.*/
-    function sellTo(address to, uint256 tokenId)
+    function buySellableTicket(uint256 tokenId)
         public
         payable
-        onlySalesManager
     {
         require(_isSellable[tokenId], "The ticket is not sellable.");
         require(
@@ -215,7 +205,7 @@ contract Ticket is ERC721, ERC721Burnable {
         );
 
         address payable owner = payable(ownerOf(tokenId));
-        _transfer(owner, to, tokenId);
+        _transfer(owner, msg.sender, tokenId);
         owner.transfer(msg.value);
     }
 }
