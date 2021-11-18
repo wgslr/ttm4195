@@ -1,15 +1,8 @@
-# Basic Sample Hardhat Project
+# TTM4195 assignment
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts.
+## Development envnironment
 
-Try running some of the following tasks:
+- Frist, install dependencies: `npm install`
+- To run tests: `npx hardhat test`
 
-```shell
-npx hardhat accounts
-npx hardhat compile
-npx hardhat clean
-npx hardhat test
-npx hardhat node
-node scripts/sample-script.js
-npx hardhat help
-```
+For deployment, use Remix IDE.
