@@ -58,6 +58,7 @@ contract TicketBookingSystem {
         //    title,
         //    _seats.length
         //);
+        creator = msg.sender;
         showTitle = title;
         validationTimeframe = _validationTimeframe;
         for (uint256 i = 0; i < _seats.length; ++i) {
@@ -70,11 +71,11 @@ contract TicketBookingSystem {
         require(
             msg.value == seats[seatId].price,
             "The price of the ticket is not correct."
-        );      //The paid value needs to be the same as the price
+        ); //The paid value needs to be the same as the price
         require(
             seats[seatId].timestamp > block.timestamp,
             "The specified ticket is no longer valid."
-        );      //The show time is in the future
+        ); //The show time is in the future
         return tickets.mintTKT(msg.sender, seatId);
     }
 
@@ -118,13 +119,6 @@ contract TicketBookingSystem {
         tickets.burnTKT(tokenId); //Destroy original ticket
         return posters.mintPTR(msg.sender, tokenId); //Create poster that serves as proof-of-purchase
     }
-
-    /* Implements second-hand ticket trading.
-    Relies on Ticket.sellTo for verification of sellability and price.
-    */
-    function tradeTicket(address buyer, uint256 tokenId) public payable {
-        tickets.sellTo{value: msg.value}(buyer, tokenId);
-    }
 }
 
 contract Ticket is ERC721, ERC721Burnable {
@@ -132,6 +126,8 @@ contract Ticket is ERC721, ERC721Burnable {
 
     mapping(uint256 => uint256) private _salePrice;
     mapping(uint256 => bool) private _isSellable;
+
+    mapping(uint256 => uint256[]) private _swappableWith;
 
     constructor() ERC721("Ticket", "TKT") {
         minterAddress = msg.sender;
@@ -142,6 +138,11 @@ contract Ticket is ERC721, ERC721Burnable {
             msg.sender == minterAddress,
             "The calling address is not authorized."
         );
+        _;
+    }
+
+    modifier ticketExists(uint256 tokenId) {
+        require(_exists(tokenId), "The ticket with this ID does not exist.");
         _;
     }
 
@@ -176,7 +177,7 @@ contract Ticket is ERC721, ERC721Burnable {
         uint256 tokenId,
         bool isSellable,
         uint256 price
-    ) public onlyOwner(tokenId) {
+    ) public ticketExists(tokenId) onlyOwner(tokenId) {
         _isSellable[tokenId] = isSellable;
         if (isSellable) {
             _salePrice[tokenId] = price;
@@ -186,12 +187,26 @@ contract Ticket is ERC721, ERC721Burnable {
     }
 
     /**
+    @notice Set whether the ticket can be swapped with other tickets. Available only to the owner.
+    @param tokenId Ticket id to modify
+    @param tokens Tokens that can be swapped with the offered token. Empty array means that the token is not swappable.
+     */
+    function setSwappable(uint256 tokenId, uint256[] memory tokens)
+        public
+        ticketExists(tokenId)
+        onlyOwner(tokenId)
+    {
+        _swappableWith[tokenId] = tokens;
+    }
+
+    /**
     Returns information if given ticket is sellable.
     If it is sellable, returns the price. If not, the second returned value should be ignored.
      */
     function getResalePrice(uint256 tokenId)
         public
         view
+        ticketExists(tokenId)
         returns (bool isSellable, uint256 price)
     {
         isSellable = _isSellable[tokenId];
@@ -200,14 +215,24 @@ contract Ticket is ERC721, ERC721Burnable {
         }
     }
 
-    /* Requires the caller to be BookingSystem.
-     * All trades are made to pass through the BookingSystem due to
-     * theassignment requirement to have a tradeTicket function.*/
-    function sellTo(address to, uint256 tokenId)
+    /**
+    Returns the list of ticket IDs that can be swapped with the given ticket ID.
+     */
+    function getSwappableTickets(uint256 tokenId)
         public
-        payable
-        onlySalesManager
+        view
+        ticketExists(tokenId)
+        returns (uint256[] memory tokens)
     {
+        tokens = _swappableWith[tokenId];
+    }
+
+    function stopTicketTradeability(uint256 tokenId) private {
+        _isSellable[tokenId] = false;
+        delete _swappableWith[tokenId];
+    }
+
+    function buySellableTicket(uint256 tokenId) public payable ticketExists(tokenId) {
         require(_isSellable[tokenId], "The ticket is not sellable.");
         require(
             msg.value == _salePrice[tokenId],
@@ -215,8 +240,31 @@ contract Ticket is ERC721, ERC721Burnable {
         );
 
         address payable owner = payable(ownerOf(tokenId));
-        _transfer(owner, to, tokenId);
+        _transfer(owner, msg.sender, tokenId);
+        stopTicketTradeability(tokenId); // the new owner decides about ticket tradeability
         owner.transfer(msg.value);
+    }
+
+    function swapTickets(uint256 tokenToGetId, uint256 tokenToGiveId)
+        public
+        ticketExists(tokenToGetId)
+        ticketExists(tokenToGiveId)
+        onlyOwner(tokenToGiveId)
+    {
+        bool tokensAreSwappable = false;
+        for (uint256 i = 0; i < _swappableWith[tokenToGetId].length; i++) {
+            if (tokenToGiveId == _swappableWith[tokenToGetId][i]) {
+                tokensAreSwappable = true;
+            }
+        }
+        require(tokensAreSwappable, "The tickets are not swappable.");
+
+        address owner = ownerOf(tokenToGetId);
+        _transfer(owner, msg.sender, tokenToGetId);
+        _transfer(msg.sender, owner, tokenToGiveId);
+        // the new owner decides about ticket tradeability
+        stopTicketTradeability(tokenToGetId);
+        stopTicketTradeability(tokenToGiveId);
     }
 }
 
