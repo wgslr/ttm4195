@@ -314,12 +314,19 @@ describe("TicketBookingSystem", function () {
     expect(await ticketsResellerC.ownerOf(0)).to.be.equal(customerB.address);
     expect(await ticketsResellerC.ownerOf(1)).to.be.equal(buyerD.address);
 
+    // commented out because manipulating blok timestamp messes up other tests
+
+    // await ethers.provider.send("evm_setNextBlockTimestamp", [
+    //   seats[0].timestamp - 2,
+    // ]);
+
     // await expect(ticketBookingSystem.connect(customerB).validate(1)).to.be
     //   .reverted;
-    // const posterId = await ticketBookingSystem.connect(customerB).validate(0);
+    // await ticketBookingSystem.connect(customerB).validate(0);
 
-    // expect(await postersResellerC.ownerOf(posterId)).to.be.equal(
-    //   customerB.address
+    // expect(await postersResellerC.ownerOf(0)).to.be.equal(customerB.address);
+    // expect(await postersResellerC.getTitle()).to.be.equal(
+    //   await ticketBookingSystem.showTitle()
     // );
   });
 });
