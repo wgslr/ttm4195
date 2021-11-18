@@ -76,6 +76,11 @@ contract TicketBookingSystem {
             seats[seatId].timestamp > block.timestamp,
             "The specified ticket is no longer valid."
         ); //The show time is in the future
+        require(
+            seats[seatId].timestamp - validationTimeframe >= block.timestamp, 
+            "The Validation already started and the ticket can't be bought anymore"
+            // tickets cannot be bought once the validation has started
+        ); 
         return tickets.mintTKT(msg.sender, seatId);
     }
 
