@@ -143,7 +143,7 @@ contract Ticket is ERC721, ERC721Burnable {
         minterAddress = msg.sender;
     }
 
-    modifier onlySalesManager() {
+    modifier onlyBookingSystem() {
         require(
             msg.sender == minterAddress,
             "The calling address is not authorized."
@@ -166,14 +166,14 @@ contract Ticket is ERC721, ERC721Burnable {
 
     function mintTKT(address recipient, uint256 seatId)
         public
-        onlySalesManager
+        onlyBookingSystem
         returns (uint256)
     {
         _safeMint(recipient, seatId);
         return seatId;
     }
 
-    function burnTKT(uint256 seatId) public onlySalesManager {
+    function burnTKT(uint256 seatId) public onlyBookingSystem {
         _burn(seatId);
     }
 
@@ -290,7 +290,7 @@ contract Poster is ERC721 {
         minterAddress = msg.sender;
     }
 
-    modifier onlySalesManager() {
+    modifier onlyBookingSystem() {
         require(
             msg.sender == minterAddress,
             "The calling address is not authorized."
@@ -300,7 +300,7 @@ contract Poster is ERC721 {
 
     function mintPTR(address recipient, uint256 itemId)
         public
-        onlySalesManager
+        onlyBookingSystem
         returns (uint256)
     {
         _safeMint(recipient, itemId);
