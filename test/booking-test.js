@@ -6,28 +6,28 @@ describe("TicketBookingSystem", function () {
     {
       rowNumber: 3,
       seatNumber: 4,
-      timestamp: new Date("2100-01-01").getTime(),
+      timestamp: new Date("2100-01-01").getTime() / 1000,
       seatViewURL: "wikipedia.org",
       price: 30,
     },
     {
       rowNumber: 3,
       seatNumber: 5,
-      timestamp: new Date("2100-01-01").getTime(),
+      timestamp: new Date("2100-01-01").getTime() / 1000,
       seatViewURL: "wikipedia.org",
       price: 30,
     },
     {
       rowNumber: 4,
       seatNumber: 1,
-      timestamp: new Date("2100-01-01").getTime(),
+      timestamp: new Date("2100-01-01").getTime() / 1000,
       seatViewURL: "wikipedia.org",
       price: 20,
     },
     {
       rowNumber: 4,
       seatNumber: 2,
-      timestamp: new Date("2100-01-01").getTime(),
+      timestamp: new Date("2100-01-01").getTime() / 1000,
       seatViewURL: "wikipedia.org",
       price: 20,
     },
@@ -35,6 +35,7 @@ describe("TicketBookingSystem", function () {
 
   let TicketBookingSystemFactory;
   let TicketFactory;
+  let PosterFactory;
   let seller, buyer1, buyer2, buyer3, buyer4;
   let ticketBookingSystem;
 
@@ -45,6 +46,7 @@ describe("TicketBookingSystem", function () {
       seller
     );
     TicketFactory = await ethers.getContractFactory("Ticket");
+    PosterFactory = await ethers.getContractFactory("Poster");
   });
 
   beforeEach(async function () {
@@ -285,6 +287,39 @@ describe("TicketBookingSystem", function () {
   });
 
   it("follows assignment scenario", async function () {
-    const [sellerA, customerB, resellerC, buyerD] = await ethers.getSigners();
+    const [_sellerA, customerB, resellerC, buyerD] = await ethers.getSigners();
+    const ticketsContractAddr = await ticketBookingSystem.tickets();
+    const postersContractAddr = await ticketBookingSystem.posters();
+    const ticketsCustomerB =
+      TicketFactory.attach(ticketsContractAddr).connect(customerB);
+    const ticketsResellerC =
+      TicketFactory.attach(ticketsContractAddr).connect(resellerC);
+    const ticketsBuyerD =
+      TicketFactory.attach(ticketsContractAddr).connect(buyerD);
+    const postersResellerC =
+      PosterFactory.attach(postersContractAddr).connect(resellerC);
+
+    await ticketBookingSystem
+      .connect(customerB)
+      .buy(0, { value: seats[0].price });
+    await ticketBookingSystem
+      .connect(resellerC)
+      .buy(1, { value: seats[1].price });
+
+    expect(await ticketsResellerC.ownerOf(1)).to.be.equal(resellerC.address);
+
+    await ticketsResellerC.setSellable(1, true, 1000);
+    await ticketsBuyerD.buySellableTicket(1, { value: 1000 });
+
+    expect(await ticketsResellerC.ownerOf(0)).to.be.equal(customerB.address);
+    expect(await ticketsResellerC.ownerOf(1)).to.be.equal(buyerD.address);
+
+    // await expect(ticketBookingSystem.connect(customerB).validate(1)).to.be
+    //   .reverted;
+    // const posterId = await ticketBookingSystem.connect(customerB).validate(0);
+
+    // expect(await postersResellerC.ownerOf(posterId)).to.be.equal(
+    //   customerB.address
+    // );
   });
 });
