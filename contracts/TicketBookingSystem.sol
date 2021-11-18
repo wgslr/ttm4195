@@ -370,4 +370,8 @@ contract Poster is ERC721 {
         _safeMint(recipient, itemId);
         return itemId;
     }
+
+    function getTitle() public view returns (string memory) {
+        return TicketBookingSystem(minterAddress).showTitle();
+    }
 }
